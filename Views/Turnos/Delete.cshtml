@@ -1,0 +1,71 @@
+@model TurnoDto
+
+@{
+    ViewData["Title"] = "Eliminar Turno";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Eliminar Turno</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <strong>¿Está seguro que desea eliminar este turno?</strong>
+                    <p class="mb-0 mt-2">Esta acción no se puede deshacer.</p>
+                </div>
+                
+                <dl class="row">
+                    <dt class="col-sm-4">Paciente:</dt>
+                    <dd class="col-sm-8">@Model.PacienteNombre</dd>
+                    
+                    <dt class="col-sm-4">Doctor:</dt>
+                    <dd class="col-sm-8">@Model.DoctorNombre</dd>
+                    
+                    <dt class="col-sm-4">Especialidad:</dt>
+                    <dd class="col-sm-8">@Model.DoctorEspecialidad</dd>
+                    
+                    <dt class="col-sm-4">Fecha y Hora:</dt>
+                    <dd class="col-sm-8">
+                        @Model.FechaHora.ToString("dd/MM/yyyy") a las @Model.FechaHora.ToString("HH:mm") hs
+                    </dd>
+                    
+                    <dt class="col-sm-4">Estado:</dt>
+                    <dd class="col-sm-8">
+                        @switch (Model.Estado)
+                        {
+                            case "Pendiente":
+                                <span class="badge bg-warning">@Model.Estado</span>
+                                break;
+                            case "Confirmado":
+                                <span class="badge bg-info">@Model.Estado</span>
+                                break;
+                            case "Completado":
+                                <span class="badge bg-success">@Model.Estado</span>
+                                break;
+                            case "Cancelado":
+                                <span class="badge bg-danger">@Model.Estado</span>
+                                break;
+                        }
+                    </dd>
+                    
+                    <dt class="col-sm-4">Motivo:</dt>
+                    <dd class="col-sm-8">@(Model.Motivo ?? "-")</dd>
+                </dl>
+                
+                <form asp-action="Delete" method="post">
+                    <div class="d-flex justify-content-between mt-4">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Confirmar Eliminación
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
