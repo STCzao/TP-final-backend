@@ -6,16 +6,10 @@ using tp_final_backend.Repositories.Interfaces;
 
 namespace tp_final_backend.Controllers
 {
-    public class DoctoresController : Controller
+    public class DoctoresController(IDoctorRepository repository, IMapper mapper) : Controller
     {
-        private readonly IDoctorRepository _repository;
-        private readonly IMapper _mapper;
-
-        public DoctoresController(IDoctorRepository repository, IMapper mapper)
-        {
-            _repository = repository;
-            _mapper = mapper;
-        }
+        private readonly IDoctorRepository _repository = repository;
+        private readonly IMapper _mapper = mapper;
 
         public async Task<IActionResult> Index()
         {

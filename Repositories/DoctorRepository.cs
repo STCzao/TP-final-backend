@@ -5,14 +5,8 @@ using tp_final_backend.Repositories.Interfaces;
 
 namespace tp_final_backend.Repositories
 {
-    public class DoctorRepository : IDoctorRepository
+    public class DoctorRepository(ApplicationDbContext _context) : IDoctorRepository
     {
-        private readonly ApplicationDbContext _context;
-
-        public DoctorRepository(ApplicationDbContext context)
-        {
-            _context = context;
-        }
 
         public async Task<IEnumerable<Doctor>> GetAllAsync()
         {

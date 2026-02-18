@@ -13,10 +13,20 @@ namespace tp_final_backend.Mappings
             CreateMap<CreatePacienteDto, Paciente>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.FechaRegistro, opt => opt.Ignore())
+                .ForMember(dest => dest.FechaNacimiento, opt => opt.MapFrom(src => 
+                    src.FechaNacimiento.Kind == DateTimeKind.Utc 
+                        ? src.FechaNacimiento 
+                        : new DateTime(src.FechaNacimiento.Year, src.FechaNacimiento.Month, src.FechaNacimiento.Day, 0, 0, 0, DateTimeKind.Utc)
+                ))
                 .ForMember(dest => dest.Turnos, opt => opt.Ignore());
             CreateMap<UpdatePacienteDto, Paciente>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.FechaRegistro, opt => opt.Ignore())
+                .ForMember(dest => dest.FechaNacimiento, opt => opt.MapFrom(src => 
+                    src.FechaNacimiento.Kind == DateTimeKind.Utc 
+                        ? src.FechaNacimiento 
+                        : new DateTime(src.FechaNacimiento.Year, src.FechaNacimiento.Month, src.FechaNacimiento.Day, 0, 0, 0, DateTimeKind.Utc)
+                ))
                 .ForMember(dest => dest.Turnos, opt => opt.Ignore());
             CreateMap<Paciente, UpdatePacienteDto>(); // Mapeo inverso para Edit
 
@@ -46,12 +56,22 @@ namespace tp_final_backend.Mappings
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.Estado, opt => opt.MapFrom(src => "Pendiente"))
                 .ForMember(dest => dest.FechaCreacion, opt => opt.Ignore())
+                .ForMember(dest => dest.FechaHora, opt => opt.MapFrom(src => 
+                    src.FechaHora.Kind == DateTimeKind.Unspecified
+                        ? DateTime.SpecifyKind(src.FechaHora, DateTimeKind.Utc)
+                        : src.FechaHora.ToUniversalTime()
+                ))
                 .ForMember(dest => dest.Paciente, opt => opt.Ignore())
                 .ForMember(dest => dest.Doctor, opt => opt.Ignore());
             
             CreateMap<UpdateTurnoDto, Turno>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.FechaCreacion, opt => opt.Ignore())
+                .ForMember(dest => dest.FechaHora, opt => opt.MapFrom(src => 
+                    src.FechaHora.Kind == DateTimeKind.Unspecified
+                        ? DateTime.SpecifyKind(src.FechaHora, DateTimeKind.Utc)
+                        : src.FechaHora.ToUniversalTime()
+                ))
                 .ForMember(dest => dest.Paciente, opt => opt.Ignore())
                 .ForMember(dest => dest.Doctor, opt => opt.Ignore());
             CreateMap<Turno, UpdateTurnoDto>(); // Mapeo inverso para Edit

@@ -7,24 +7,16 @@ using tp_final_backend.Repositories.Interfaces;
 
 namespace tp_final_backend.Controllers
 {
-    public class TurnosController : Controller
+    public class TurnosController(
+        ITurnoRepository turnoRepository,
+        IPacienteRepository pacienteRepository,
+        IDoctorRepository doctorRepository,
+        IMapper mapper) : Controller
     {
-        private readonly ITurnoRepository _turnoRepository;
-        private readonly IPacienteRepository _pacienteRepository;
-        private readonly IDoctorRepository _doctorRepository;
-        private readonly IMapper _mapper;
-
-        public TurnosController(
-            ITurnoRepository turnoRepository,
-            IPacienteRepository pacienteRepository,
-            IDoctorRepository doctorRepository,
-            IMapper mapper)
-        {
-            _turnoRepository = turnoRepository;
-            _pacienteRepository = pacienteRepository;
-            _doctorRepository = doctorRepository;
-            _mapper = mapper;
-        }
+        private readonly ITurnoRepository _turnoRepository = turnoRepository;
+        private readonly IPacienteRepository _pacienteRepository = pacienteRepository;
+        private readonly IDoctorRepository _doctorRepository = doctorRepository;
+        private readonly IMapper _mapper = mapper;
 
         public async Task<IActionResult> Index()
         {
@@ -53,6 +45,7 @@ namespace tp_final_backend.Controllers
         {
             if (ModelState.IsValid)
             {
+                var turno = _mapper.Map<Turno>(createTurnoDto);
                 if (!await _pacienteRepository.ExistsAsync(createTurnoDto.PacienteId))
                 {
                     ModelState.AddModelError("PacienteId", "Paciente no encontrado");
@@ -67,9 +60,17 @@ namespace tp_final_backend.Controllers
                     return View(createTurnoDto);
                 }
 
-                if (createTurnoDto.FechaHora < DateTime.Now)
+                var manana = DateTime.Today.AddDays(1);
+                if (createTurnoDto.FechaHora.Date < manana.Date)
                 {
-                    ModelState.AddModelError("FechaHora", "No se puede crear un turno con fecha en el pasado");
+                    ModelState.AddModelError("FechaHora", "El turno debe agendarse a partir del día de mañana");
+                    await LoadSelectLists();
+                    return View(createTurnoDto);
+                }
+
+                if (createTurnoDto.FechaHora.Hour < 9 || createTurnoDto.FechaHora.Hour >= 18)
+                {
+                    ModelState.AddModelError("FechaHora", "El horario debe estar entre las 9:00 y las 18:00");
                     await LoadSelectLists();
                     return View(createTurnoDto);
                 }
@@ -81,7 +82,7 @@ namespace tp_final_backend.Controllers
                     return View(createTurnoDto);
                 }
 
-                var turno = _mapper.Map<Turno>(createTurnoDto);
+                
                 await _turnoRepository.CreateAsync(turno);
                 TempData["Success"] = "Turno creado exitosamente";
                 return RedirectToAction(nameof(Index));
@@ -120,6 +121,23 @@ namespace tp_final_backend.Controllers
                 if (!await _doctorRepository.ExistsAsync(updateTurnoDto.DoctorId))
                 {
                     ModelState.AddModelError("DoctorId", "Doctor no encontrado");
+                    ViewBag.Id = id;
+                    await LoadSelectLists();
+                    return View(updateTurnoDto);
+                }
+
+                var manana = DateTime.Today.AddDays(1);
+                if (updateTurnoDto.FechaHora.Date < manana.Date)
+                {
+                    ModelState.AddModelError("FechaHora", "El turno debe agendarse a partir del día de mañana");
+                    ViewBag.Id = id;
+                    await LoadSelectLists();
+                    return View(updateTurnoDto);
+                }
+
+                if (updateTurnoDto.FechaHora.Hour < 9 || updateTurnoDto.FechaHora.Hour >= 18)
+                {
+                    ModelState.AddModelError("FechaHora", "El horario debe estar entre las 9:00 y las 18:00");
                     ViewBag.Id = id;
                     await LoadSelectLists();
                     return View(updateTurnoDto);
