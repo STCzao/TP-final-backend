@@ -1,0 +1,94 @@
+@model TurnoDto
+
+@{
+    ViewData["Title"] = "Detalles del Turno";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0"><i class="bi bi-calendar-event"></i> Detalles del Turno</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5 class="mb-3"><i class="bi bi-person"></i> Información del Paciente</h5>
+                        <dl>
+                            <dt>Nombre:</dt>
+                            <dd>@Model.PacienteNombre</dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <h5 class="mb-3"><i class="bi bi-person-badge"></i> Información del Doctor</h5>
+                        <dl>
+                            <dt>Nombre:</dt>
+                            <dd>@Model.DoctorNombre</dd>
+                            <dt>Especialidad:</dt>
+                            <dd><i class="bi bi-star-fill text-warning"></i> @Model.DoctorEspecialidad</dd>
+                        </dl>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <dl class="row">
+                    <dt class="col-sm-4">Fecha del Turno:</dt>
+                    <dd class="col-sm-8">
+                        <i class="bi bi-calendar"></i> @Model.FechaHora.ToString("dddd, dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES"))
+                    </dd>
+                    
+                    <dt class="col-sm-4">Hora:</dt>
+                    <dd class="col-sm-8">
+                        <i class="bi bi-clock"></i> @Model.FechaHora.ToString("HH:mm") hs
+                    </dd>
+                    
+                    <dt class="col-sm-4">Estado:</dt>
+                    <dd class="col-sm-8">
+                        @switch (Model.Estado)
+                        {
+                            case "Pendiente":
+                                <span class="badge bg-warning">@Model.Estado</span>
+                                break;
+                            case "Confirmado":
+                                <span class="badge bg-info">@Model.Estado</span>
+                                break;
+                            case "Completado":
+                                <span class="badge bg-success">@Model.Estado</span>
+                                break;
+                            case "Cancelado":
+                                <span class="badge bg-danger">@Model.Estado</span>
+                                break;
+                            default:
+                                <span class="badge bg-secondary">@Model.Estado</span>
+                                break;
+                        }
+                    </dd>
+                    
+                    <dt class="col-sm-4">Motivo:</dt>
+                    <dd class="col-sm-8">@(Model.Motivo ?? "-")</dd>
+                    
+                    <dt class="col-sm-4">Observaciones:</dt>
+                    <dd class="col-sm-8">@(Model.Observaciones ?? "-")</dd>
+                    
+                    <dt class="col-sm-4">Fecha de Creación:</dt>
+                    <dd class="col-sm-8">@Model.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</dd>
+                </dl>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver al Listado
+                    </a>
+                    <div>
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
