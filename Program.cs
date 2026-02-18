@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using tp_final_backend.Data;
+using tp_final_backend.Middlewares;
 using tp_final_backend.Repositories;
 using tp_final_backend.Repositories.Interfaces;
 
@@ -36,6 +37,9 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Use Global Exception Middleware
+app.UseMiddleware<GlobalException>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

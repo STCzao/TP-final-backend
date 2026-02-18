@@ -15,5 +15,6 @@ namespace tp_final_backend.Repositories.Interfaces
         Task<bool> DeleteAsync(int id);
         Task<bool> ExistsAsync(int id);
         Task<bool> TurnoDisponibleAsync(int doctorId, DateTime fechaHora, int? turnoId = null);
+        Task<IEnumerable<string>> GetSlotsDisponiblesAsync(int doctorId, DateTime fecha, int? turnoId = null);
     }
 }

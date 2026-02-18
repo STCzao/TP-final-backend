@@ -32,16 +32,18 @@
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label asp-for="FechaHora" class="form-label">Fecha *</label>
-                            <input asp-for="FechaHora" type="date" class="form-control" />
+                            <label for="fechaInput" class="form-label">Fecha *</label>
+                            <input type="date" id="fechaInput" class="form-control" />
                             <span asp-validation-for="FechaHora" class="text-danger"></span>
                         </div>
-                        
                         <div class="col-md-6 mb-3">
-                            <label for="hora" class="form-label">Hora *</label>
-                            <input asp-for="FechaHora" type="time" class="form-control" />
+                            <label for="horaInput" class="form-label">Horario disponible *</label>
+                            <select id="horaInput" class="form-select" disabled>
+                                <option value="">-- Seleccione doctor y fecha primero --</option>
+                            </select>
                         </div>
                     </div>
+                    <input type="hidden" asp-for="FechaHora" id="fechaHoraHidden" />
                     
                     <div class="mb-3">
                         <label asp-for="Motivo" class="form-label">Motivo de la Consulta</label>
@@ -77,7 +79,58 @@
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script>
-        // Establecer fecha mínima como hoy
-        document.querySelector('input[type="date"]').min = new Date().toISOString().split('T')[0];
+        const doctorSelect = document.getElementById('DoctorId');
+        const fechaInput = document.getElementById('fechaInput');
+        const horaSelect = document.getElementById('horaInput');
+        const fechaHoraHidden = document.getElementById('fechaHoraHidden');
+
+        // Fecha mínima: mañana
+        const manana = new Date();
+        manana.setDate(manana.getDate() + 1);
+        fechaInput.min = manana.toISOString().split('T')[0];
+
+        async function cargarSlots() {
+            const doctorId = doctorSelect.value;
+            const fecha = fechaInput.value;
+
+            horaSelect.innerHTML = '<option value="">-- Cargando... --</option>';
+            horaSelect.disabled = true;
+            fechaHoraHidden.value = '';
+
+            if (!doctorId || !fecha) {
+                horaSelect.innerHTML = '<option value="">-- Seleccione doctor y fecha primero --</option>';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/Turnos/slots?doctorId=${doctorId}&fecha=${fecha}`);
+                const slots = await res.json();
+
+                if (slots.length === 0) {
+                    horaSelect.innerHTML = '<option value="">No hay turnos disponibles para este día</option>';
+                    return;
+                }
+
+                horaSelect.innerHTML = '<option value="">-- Seleccione un horario --</option>';
+                slots.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s;
+                    opt.textContent = s;
+                    horaSelect.appendChild(opt);
+                });
+                horaSelect.disabled = false;
+            } catch {
+                horaSelect.innerHTML = '<option value="">Error al cargar horarios</option>';
+            }
+        }
+
+        doctorSelect.addEventListener('change', cargarSlots);
+        fechaInput.addEventListener('change', cargarSlots);
+
+        horaSelect.addEventListener('change', function () {
+            const fecha = fechaInput.value;
+            const hora = this.value;
+            fechaHoraHidden.value = hora ? `${fecha}T${hora}:00` : '';
+        });
     </script>
 }

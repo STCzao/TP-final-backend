@@ -5,14 +5,8 @@ using tp_final_backend.Repositories.Interfaces;
 
 namespace tp_final_backend.Repositories
 {
-    public class TurnoRepository : ITurnoRepository
+    public class TurnoRepository(ApplicationDbContext _context) : ITurnoRepository
     {
-        private readonly ApplicationDbContext _context;
-
-        public TurnoRepository(ApplicationDbContext context)
-        {
-            _context = context;
-        }
 
         public async Task<IEnumerable<Turno>> GetAllAsync()
         {
@@ -69,7 +63,7 @@ namespace tp_final_backend.Repositories
             return await _context.Turnos
                 .Include(t => t.Paciente)
                 .Include(t => t.Doctor)
-                .Where(t => t.Estado.ToLower() == estado.ToLower())
+                .Where(t => string.Equals(t.Estado, estado, StringComparison.OrdinalIgnoreCase))
                 .OrderByDescending(t => t.FechaHora)
                 .ToListAsync();
         }
@@ -78,7 +72,7 @@ namespace tp_final_backend.Repositories
         {
             _context.Turnos.Add(turno);
             await _context.SaveChangesAsync();
-            
+
             // Recargar con las relaciones
             await _context.Entry(turno)
                 .Reference(t => t.Paciente)
@@ -86,7 +80,7 @@ namespace tp_final_backend.Repositories
             await _context.Entry(turno)
                 .Reference(t => t.Doctor)
                 .LoadAsync();
-            
+
             return turno;
         }
 
@@ -94,7 +88,7 @@ namespace tp_final_backend.Repositories
         {
             _context.Entry(turno).State = EntityState.Modified;
             await _context.SaveChangesAsync();
-            
+
             // Recargar con las relaciones
             await _context.Entry(turno)
                 .Reference(t => t.Paciente)
@@ -102,7 +96,7 @@ namespace tp_final_backend.Repositories
             await _context.Entry(turno)
                 .Reference(t => t.Doctor)
                 .LoadAsync();
-            
+
             return turno;
         }
 
@@ -126,24 +120,59 @@ namespace tp_final_backend.Repositories
 
         public async Task<bool> TurnoDisponibleAsync(int doctorId, DateTime fechaHora, int? turnoId = null)
         {
-            // Verificar si el doctor ya tiene un turno en ese horario
-            // Consideramos un margen de 30 minutos antes y después
-            var fechaInicio = fechaHora.AddMinutes(-30);
-            var fechaFin = fechaHora.AddMinutes(30);
+            // Normalizar a UTC
+            if (fechaHora.Kind == DateTimeKind.Unspecified)
+                fechaHora = DateTime.SpecifyKind(fechaHora, DateTimeKind.Utc);
+            else if (fechaHora.Kind == DateTimeKind.Local)
+                fechaHora = fechaHora.ToUniversalTime();
 
-            var query = _context.Turnos
-                .Where(t => t.DoctorId == doctorId &&
-                           t.FechaHora >= fechaInicio &&
-                           t.FechaHora <= fechaFin &&
-                           t.Estado != "Cancelado");
+            // Truncar segundos
+            fechaHora = new DateTime(fechaHora.Year, fechaHora.Month, fechaHora.Day,
+                fechaHora.Hour, fechaHora.Minute, 0, DateTimeKind.Utc);
 
-            // Si estamos actualizando un turno, excluirlo de la verificación
-            if (turnoId.HasValue)
+            var duracion = TimeSpan.FromMinutes(30);
+            var inicioNuevo = fechaHora;
+            var finNuevo = fechaHora.Add(duracion);
+
+            // Verificar solapamiento: un turno existente solapa si su inicio < finNuevo Y su fin > inicioNuevo
+            var existe = await _context.Turnos
+                .Where(t => t.DoctorId == doctorId
+                    && (turnoId == null || t.Id != turnoId)
+                    && t.FechaHora < finNuevo
+                    && t.FechaHora.AddMinutes(30) > inicioNuevo)
+                .AnyAsync();
+
+            return !existe;
+        }
+
+        public async Task<IEnumerable<string>> GetSlotsDisponiblesAsync(int doctorId, DateTime fecha, int? turnoId = null)
+        {
+            var fechaUtc = DateTime.SpecifyKind(fecha.Date, DateTimeKind.Utc);
+
+            // Traer todos los turnos del doctor en esa fecha
+            var turnosDelDia = await _context.Turnos
+                .Where(t => t.DoctorId == doctorId
+                    && t.FechaHora >= fechaUtc
+                    && t.FechaHora < fechaUtc.AddDays(1)
+                    && (turnoId == null || t.Id != turnoId))
+                .Select(t => t.FechaHora)
+                .ToListAsync();
+
+            var slots = new List<string>();
+            var slotInicio = new TimeSpan(9, 0, 0);
+            var slotFin = new TimeSpan(18, 0, 0);
+            var duracion = TimeSpan.FromMinutes(30);
+
+            for (var hora = slotInicio; hora < slotFin; hora += duracion)
             {
-                query = query.Where(t => t.Id != turnoId.Value);
+                var slotDt = fechaUtc.Add(hora);
+                // El slot está ocupado si algún turno existente solapa con él
+                var ocupado = turnosDelDia.Any(t => t < slotDt.Add(duracion) && t.Add(duracion) > slotDt);
+                if (!ocupado)
+                    slots.Add(hora.ToString(@"hh\:mm"));
             }
 
-            return !await query.AnyAsync();
+            return slots;
         }
     }
 }

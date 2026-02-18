@@ -36,6 +36,6 @@ namespace tp_final_backend.Models
         public DateTime FechaRegistro { get; set; } = DateTime.UtcNow;
 
         // Navigation property
-        public ICollection<Turno> Turnos { get; set; } = new List<Turno>();
+        public ICollection<Turno> Turnos { get; set; } = [];
     }
 }
